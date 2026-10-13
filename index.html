@@ -271,7 +271,7 @@
     if (d.nama.length < 3) e.nama = 'Nama lengkap wajib diisi (minimal 3 karakter).';
     if (!/^\d{16}$/.test(d.ktp)) e.ktp = 'Nomor KTP harus tepat 16 digit angka (saat ini ' + d.ktp.length + ' digit).';
     if (d.alamat.length < 5) e.alamat = 'Alamat wajib diisi.';
-    if (!/^0\d{9,12}$/.test(d.telepon)) e.telepon = 'Nomor telepon harus diawali 0 dan terdiri dari 10-13 digit angka.';
+    if (d.telepon && !/^0\d{9,12}$/.test(d.telepon)) {e.telepon = 'Nomor telepon harus diawali 0 dan terdiri dari 10-13 digit angka.';}
     if (!d.pengalaman) e.pengalaman = 'Pilih salah satu pengalaman kerja.';
     else if (d.pengalaman === 'Berpengalaman' && !(d.perusahaan1 || d.perusahaan2 || d.perusahaan3)) {
       e.perusahaan = 'Isi minimal 1 nama perusahaan sebelumnya.';
