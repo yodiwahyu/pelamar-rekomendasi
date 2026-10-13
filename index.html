@@ -266,22 +266,49 @@
   }
 
   function validate(d) {
-    const e = {};
-    if (!d.tanggalMelamar) e.tanggalMelamar = 'Tanggal rencana melamar wajib diisi.';
-    if (d.nama.length < 3) e.nama = 'Nama lengkap wajib diisi (minimal 3 karakter).';
-    if (!/^\d{16}$/.test(d.ktp)) e.ktp = 'Nomor KTP harus tepat 16 digit angka (saat ini ' + d.ktp.length + ' digit).';
-    if (d.alamat.length < 5) e.alamat = 'Alamat wajib diisi.';
-    if (d.telepon && !/^0\d{9,12}$/.test(d.telepon)) {e.telepon = 'Nomor telepon harus diawali 0 dan terdiri dari 10-13 digit angka.';}
-    if (!d.pengalaman) e.pengalaman = 'Pilih salah satu pengalaman kerja.';
-    else if (d.pengalaman === 'Berpengalaman' && !(d.perusahaan1 || d.perusahaan2 || d.perusahaan3)) {
-      e.perusahaan = 'Isi minimal 1 nama perusahaan sebelumnya.';
-    }
-    if (d.rekNama.length < 3) e.rekNama = 'Nama yang merekomendasikan wajib diisi.';
-    if (!/^\d{1,20}$/.test(d.rekIdCard)) e.rekIdCard = 'Nomor ID Card wajib diisi dengan angka.';
-    if (d.rekJabatan.length < 2) e.rekJabatan = 'Jabatan wajib diisi.';
-    if (!d.persetujuan) e.persetujuan = 'Anda harus mencentang pernyataan ini untuk melanjutkan.';
-    return e;
+  const e = {};
+
+  if (!d.tanggalMelamar)
+    e.tanggalMelamar = 'Tanggal rencana melamar wajib diisi.';
+
+  if (!d.nama || d.nama.length < 3)
+    e.nama = 'Nama lengkap wajib diisi (minimal 3 karakter).';
+
+  if (!/^\d{16}$/.test(d.ktp || ''))
+    e.ktp = 'Nomor KTP harus tepat 16 digit angka (saat ini ' + (d.ktp || '').length + ' digit).';
+
+  if (!d.alamat || d.alamat.length < 5)
+    e.alamat = 'Alamat wajib diisi.';
+
+  // Nomor telepon opsional
+  const telepon = String(d.telepon || '').trim();
+  if (telepon && !/^0\d{9,12}$/.test(telepon)) {
+    e.telepon = 'Nomor telepon harus diawali 0 dan terdiri dari 10-13 digit angka.';
   }
+
+  if (!d.pengalaman)
+    e.pengalaman = 'Pilih salah satu pengalaman kerja.';
+  else if (
+    d.pengalaman === 'Berpengalaman' &&
+    !(d.perusahaan1 || d.perusahaan2 || d.perusahaan3)
+  ) {
+    e.perusahaan = 'Isi minimal 1 nama perusahaan sebelumnya.';
+  }
+
+  if (!d.rekNama || d.rekNama.length < 3)
+    e.rekNama = 'Nama yang merekomendasikan wajib diisi.';
+
+  if (!/^\d{1,20}$/.test(String(d.rekIdCard || '')))
+    e.rekIdCard = 'Nomor ID Card wajib diisi dengan angka.';
+
+  if (!d.rekJabatan || d.rekJabatan.length < 2)
+    e.rekJabatan = 'Jabatan wajib diisi.';
+
+  if (!d.persetujuan)
+    e.persetujuan = 'Anda harus mencentang pernyataan ini untuk melanjutkan.';
+
+  return e;
+}
 
   function showErrors(errs) {
     clearErrs();
