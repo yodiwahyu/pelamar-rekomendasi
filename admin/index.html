@@ -129,16 +129,13 @@
 
         <div id="stateBox" class="mt-5 rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">Memuat data...</div>
 
-        <!-- Tabel desktop -->
-        <section id="deskWrap" style="display:none" class="mt-5 hidden overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm md:block">
-          <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <!-- Tabel Data (ditampilkan di desktop maupun mobile) -->
+        <section id="deskWrap" style="display:none" class="mt-5 overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <table class="min-w-full divide-y divide-gray-200 text-sm border-separate border-spacing-0">
             <thead id="tHead" class="bg-brand-700 text-left text-xs font-semibold uppercase tracking-wide text-white"></thead>
             <tbody id="tBody" class="divide-y divide-gray-100"></tbody>
           </table>
         </section>
-
-        <!-- Kartu mobile -->
-        <section id="cardWrap" class="mt-5 space-y-3 md:hidden"></section>
 
         <!-- Paging -->
         <nav id="pager" class="mt-5 hidden flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:justify-between">
@@ -381,7 +378,7 @@
   let ALL = [];
   let page = 1;
 
-  /* ---------- penyimpanan token (try/catch: bisa diblokir di mode privat) ---------- */
+  /* ---------- penyimpanan token ---------- */
   function saveToken(t) { try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {} }
   function loadToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
   function clearToken() { try { localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
@@ -409,7 +406,7 @@
   }
   function openM(id) { const m = $(id); if (m) { m.classList.remove('hidden'); m.classList.add('flex'); } }
   function closeM(id) { const m = $(id); if (m) { m.classList.add('hidden'); m.classList.remove('flex'); } }
-  /** Jika sesi habis: bersihkan token dan muat ulang ke halaman login. Mengembalikan true jika ditangani. */
+
   function handleErr(message) {
     if (String(message || '').indexOf('SESSION_EXPIRED') !== -1) {
       clearToken();
@@ -465,7 +462,6 @@
     enterApp(res.user, res.statusList);
   });
 
-  /** Saat halaman dibuka / di-reload: jika masih ada sesi valid, langsung masuk. */
   async function boot() {
     const saved = loadToken();
     if (!saved) { showLoginForm(); return; }
@@ -480,7 +476,6 @@
       clearToken();
       showMsg('Sesi login telah berakhir. Silakan login kembali.');
     } else {
-      // Gagal jaringan / server: token dibiarkan agar bisa dicoba lagi dengan reload
       showMsg((res && res.message) || 'Gagal memeriksa sesi.');
     }
   }
@@ -497,7 +492,6 @@
     $('hId').textContent = user.id;
     $('hRole').textContent = user.role;
 
-    // Elemen khusus Administrator dibuang untuk Personalia (server juga menolak aksinya)
     if (!IS_ADMIN) document.querySelectorAll('[data-admin]').forEach(function (el) { el.remove(); });
 
     $('fStatus').innerHTML = '<option value="">Semua Status</option>' +
@@ -558,10 +552,6 @@
     $('pagerBtns').innerHTML = h;
   }
 
-  function kv(k, v) {
-    return '<div class="flex gap-2"><dt class="w-32 shrink-0 text-gray-500">' + esc(k) + '</dt><dd class="min-w-0 flex-1 whitespace-pre-line break-words text-gray-900">' + (v ? esc(v) : '-') + '</dd></div>';
-  }
-
   function render() {
     renderStats();
     const rows = getFiltered();
@@ -579,46 +569,50 @@
       st.textContent = ALL.length ? 'Tidak ada data yang cocok dengan pencarian/filter.' : 'Belum ada data rekomendasi yang masuk.';
       st.classList.remove('hidden');
       $('deskWrap').style.display = 'none';
-      $('cardWrap').innerHTML = '';
       renderPager(0, 1, 0, 0);
       return;
     }
     st.classList.add('hidden');
-    $('deskWrap').style.display = ''; // kelas "hidden md:block" -> tabel hanya tampil di layar >= md
+    $('deskWrap').style.display = '';
 
-    $('tHead').innerHTML = '<tr><th class="px-3 py-3">No</th>' +
-      COLS.map(function (c) { return '<th class="whitespace-nowrap px-3 py-3">' + esc(c.label) + '</th>'; }).join('') +
-      (IS_ADMIN ? '<th class="sticky right-0 bg-brand-800 px-3 py-3">Aksi</th>' : '') + '</tr>';
+    // Render Header dengan Freeze Column (No di left:0, Nama Pelamar di left:48px)
+    let headHTML = '<tr>';
+    headHTML += '<th class="sticky left-0 z-20 bg-brand-700 px-3 py-3 shadow-[1px_0_0_0_#15803d]">No</th>';
+    COLS.forEach(function(c) {
+      if (c.k === 'nama') {
+        headHTML += '<th class="sticky left-[48px] z-20 bg-brand-700 whitespace-nowrap px-3 py-3 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">' + esc(c.label) + '</th>';
+      } else {
+        headHTML += '<th class="whitespace-nowrap px-3 py-3">' + esc(c.label) + '</th>';
+      }
+    });
+    if (IS_ADMIN) {
+      headHTML += '<th class="sticky right-0 z-20 bg-brand-800 px-3 py-3 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.15)]">Aksi</th>';
+    }
+    headHTML += '</tr>';
+    $('tHead').innerHTML = headHTML;
 
+    // Render Body dengan Freeze Column untuk No dan Nama Pelamar
     $('tBody').innerHTML = view.map(function (r, i) {
-      const tds = COLS.map(function (c) {
-        if (c.badge) return '<td class="whitespace-nowrap px-3 py-3 align-top">' + badge(r.statusBg) + '</td>';
+      let tds = '<td class="sticky left-0 z-10 bg-white group-hover:bg-brand-50 px-3 py-3 align-top text-gray-500 shadow-[1px_0_0_0_#e5e7eb]">' + (start + i + 1) + '</td>';
+      
+      tds += COLS.map(function (c) {
         const v = val(r, c);
-        const cls = c.wrap === 'wide' ? 'min-w-[220px] max-w-xs whitespace-pre-line' : (c.wrap === 'mid' ? 'min-w-[160px] max-w-[220px] whitespace-pre-line' : 'whitespace-nowrap');
-        return '<td class="px-3 py-3 align-top ' + cls + '">' + (v ? esc(v) : '<span class="text-gray-300">-</span>') + '</td>';
-      }).join('');
-      return '<tr class="hover:bg-brand-50/50"><td class="px-3 py-3 align-top text-gray-500">' + (start + i + 1) + '</td>' + tds +
-        (IS_ADMIN ? '<td class="sticky right-0 bg-white px-3 py-3 align-top"><button data-id="' + esc(r.id) + '" class="btn-edit rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700">Cek / Ubah</button></td>' : '') +
-        '</tr>';
-    }).join('');
+        const isNama = c.k === 'nama';
+        const stickyClass = isNama ? 'sticky left-[48px] z-10 bg-white group-hover:bg-brand-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] font-medium text-gray-900 ' : '';
 
-    $('cardWrap').innerHTML = view.map(function (r) {
-      const comps = [r.perusahaan1, r.perusahaan2, r.perusahaan3].filter(Boolean).map(esc).join(', ');
-      return '<article class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">' +
-        '<div class="flex items-start justify-between gap-2"><div class="min-w-0"><h3 class="truncate font-bold text-gray-900">' + esc(r.nama) + '</h3>' +
-        '<p class="font-mono text-xs text-gray-400">' + esc(r.id) + '</p></div>' + badge(r.statusBg) + '</div>' +
-        '<dl class="mt-3 space-y-1.5 text-sm">' +
-        kv('Waktu Input', r.timestamp) + kv('Tgl Melamar', fmtDate(r.tanggalMelamar)) + kv('No. KTP', r.ktp) + kv('Telepon', r.telepon) + kv('Alamat', r.alamat) +
-        kv('Pengalaman', r.pengalaman + (comps ? ' - ' + [r.perusahaan1, r.perusahaan2, r.perusahaan3].filter(Boolean).join(', ') : '')) +
-        kv('Direkomendasi', r.rekNama + ' (' + r.rekJabatan + ')') + kv('ID Card', r.rekIdCard) + kv('Persetujuan', r.persetujuan) +
-        '</dl>' +
-        '<div class="mt-3 rounded-xl bg-gray-50 p-3"><p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-brand-700">Background Check</p><dl class="space-y-1.5 text-sm">' +
-        kv('BPJS Kesehatan', r.statusBpjs) + kv('Kepesertaan', r.statusKepesertaan) + kv('Status Aktif', r.statusAktif) +
-        kv('Riwayat Kanindo 1', r.riwayatKanindo1) + kv('Riwayat Kanindo 2', r.riwayatKanindo2) + kv('Catatan', r.catatanBg) +
-        (r.diperbaruiPada ? kv('Diperbarui', r.diperbaruiOleh + ' - ' + r.diperbaruiPada) : '') +
-        '</dl></div>' +
-        (IS_ADMIN ? '<button data-id="' + esc(r.id) + '" class="btn-edit mt-4 w-full rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Cek / Ubah Background Check</button>' : '') +
-        '</article>';
+        if (c.badge) {
+          return '<td class="' + stickyClass + 'whitespace-nowrap px-3 py-3 align-top">' + badge(r.statusBg) + '</td>';
+        }
+        
+        const cls = c.wrap === 'wide' ? 'min-w-[220px] max-w-xs whitespace-pre-line' : (c.wrap === 'mid' ? 'min-w-[160px] max-w-[220px] whitespace-pre-line' : 'whitespace-nowrap');
+        return '<td class="' + stickyClass + 'px-3 py-3 align-top ' + cls + '">' + (v ? esc(v) : '<span class="text-gray-300">-</span>') + '</td>';
+      }).join('');
+
+      if (IS_ADMIN) {
+        tds += '<td class="sticky right-0 z-10 bg-white group-hover:bg-brand-50 px-3 py-3 align-top shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]"><button data-id="' + esc(r.id) + '" class="btn-edit rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700">Cek / Ubah</button></td>';
+      }
+
+      return '<tr class="group hover:bg-brand-50/50">' + tds + '</tr>';
     }).join('');
 
     renderPager(total, pages, start, view.length);
