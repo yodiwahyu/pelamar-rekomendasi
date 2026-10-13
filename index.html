@@ -277,7 +277,7 @@
   if (!/^\d{16}$/.test(d.ktp || ''))
     e.ktp = 'Nomor KTP harus tepat 16 digit angka (saat ini ' + (d.ktp || '').length + ' digit).';
 
-  if (!d.alamat || d.alamat.length < 5)
+  if (!d.alamat || d.alamat.length < 3)
     e.alamat = 'Alamat wajib diisi.';
 
   // Nomor telepon opsional
