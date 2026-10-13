@@ -162,7 +162,7 @@
         <section id="userWrap" style="display:none" class="mt-5 overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-brand-700 text-left text-xs font-semibold uppercase tracking-wide text-white">
-              <tr><th class="px-4 py-3">No</th><th class="px-4 py-3">Nomor ID Card</th><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Role</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Aksi</th></tr>
+              <tr><th class="px-4 py-3">No</th><th class="px-4 py-3">Username</th><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Role</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Aksi</th></tr>
             </thead>
             <tbody id="uBody" class="divide-y divide-gray-100"></tbody>
           </table>
@@ -448,7 +448,7 @@
     hideMsg();
     const idCard = $('idCard').value.trim();
     const pw = $('password').value;
-    if (!idCard || !pw) { showMsg('Nomor ID Card dan password wajib diisi.'); return; }
+    if (!idCard || !pw) { showMsg('Username dan password wajib diisi.'); return; }
     setLoading(true);
 
     const res = await Api.call('login', { idCard: idCard, password: pw });
@@ -875,7 +875,7 @@
       $('uAktif').checked = u ? u.aktif : true;
       $('uPassword').value = '';
       $('uPwHint').textContent = u
-        ? 'Kosongkan jika tidak ingin mengganti password. Jika Nomor ID Card diubah, password wajib diisi ulang.'
+        ? 'Kosongkan jika tidak ingin mengganti password. Jika Username diubah, password wajib diisi ulang.'
         : 'Minimal 6 karakter.';
       const self = u && u.idCard === ME.id;
       $('uRole').disabled = !!self; $('uAktif').disabled = !!self; $('uIdCard').disabled = !!self;
