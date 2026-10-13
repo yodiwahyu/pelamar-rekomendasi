@@ -1,60 +1,342 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>
-    Pelamar Rekomendasi
-  </title>
-
-  <style>
-
-    html,
-    body {
-
-      margin: 0;
-      padding: 0;
-
-      width: 100%;
-      height: 100%;
-
-      overflow: hidden;
-
-      background: #ffffff;
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Formulir Rekomendasi Pelamar Kerja</title>
+  <script src="config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { brand: { 50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',300:'#86efac',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534',900:'#14532d' } },
+        fontFamily: { sans: ['Inter','system-ui','-apple-system','Segoe UI','Roboto','sans-serif'] }
+      } }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style type="text/tailwindcss">
+    @layer components {
+      .label { @apply block text-sm font-medium text-gray-700 mb-1.5; }
+      .input { @apply w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100; }
+      .input.invalid { @apply border-red-500 focus:border-red-500 focus:ring-red-100; }
+      .err { @apply mt-1.5 hidden text-xs font-medium text-red-600; }
+      .hint { @apply mt-1.5 text-xs text-gray-500; }
+      .card { @apply rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7; }
+      .step { @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white; }
     }
-
-
-    iframe {
-
-      display: block;
-
-      width: 100%;
-      height: 100%;
-
-      border: none;
-
-    }
-
   </style>
-
 </head>
+<body class="min-h-screen bg-gray-100 font-sans text-gray-800 antialiased">
 
+  <!-- Header -->
+  <header class="bg-gradient-to-br from-brand-800 via-brand-700 to-brand-600 text-white">
+    <div class="mx-auto flex max-w-3xl items-center gap-4 px-4 py-6 sm:py-8">
+      <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white p-2 shadow-lg sm:h-20 sm:w-20">
+        <img data-logo alt="Logo" class="max-h-full max-w-full object-contain" onerror="this.style.display='none'">
+      </div>
+      <div>
+        <h1 class="text-xl font-bold leading-tight sm:text-2xl">Formulir Rekomendasi Pelamar Kerja</h1>
+        <p class="mt-1 text-sm text-brand-100">Isi data pelamar yang Anda rekomendasikan dengan lengkap dan benar.</p>
+      </div>
+    </div>
+  </header>
 
-<body>
+  <main class="mx-auto max-w-3xl px-4 pb-16 pt-6">
 
-  <iframe
-    src="https://script.google.com/macros/s/AKfycbzGoU8XvAerKniFi4-mlNLHM3v_0MRZrss38FiwTXHEtwGJtDNDPebwKo7o6Bqk24fR/exec"
-    allowfullscreen>
-  </iframe>
+    <!-- FORM -->
+    <form id="formRek" novalidate class="space-y-5">
 
+      <!-- 1. Tanggal -->
+      <section class="card">
+        <div class="mb-5 flex items-center gap-3"><span class="step">1</span><h2 class="text-lg font-semibold">Rencana Melamar</h2></div>
+        <label class="label" for="tanggalMelamar">Tanggal Rencana Melamar <span class="text-red-500">*</span></label>
+        <input type="date" id="tanggalMelamar" class="input" required>
+        <p class="err" id="err-tanggalMelamar"></p>
+      </section>
+
+      <!-- 2. Data pelamar -->
+      <section class="card">
+        <div class="mb-5 flex items-center gap-3"><span class="step">2</span><h2 class="text-lg font-semibold">Data Pelamar</h2></div>
+        <div class="space-y-4">
+          <div>
+            <label class="label" for="nama">Nama Lengkap <span class="text-red-500">*</span></label>
+            <input type="text" id="nama" class="input" placeholder="Sesuai KTP" maxlength="100" autocomplete="off">
+            <p class="err" id="err-nama"></p>
+          </div>
+          <div>
+            <label class="label" for="ktp">Nomor KTP <span class="text-red-500">*</span></label>
+            <input type="text" id="ktp" class="input" inputmode="numeric" placeholder="16 digit angka" autocomplete="off">
+            <div class="flex justify-between"><p class="err" id="err-ktp"></p><p class="hint ml-auto" id="ktpCount">0/16</p></div>
+          </div>
+          <div>
+            <label class="label" for="alamat">Alamat <span class="text-red-500">*</span></label>
+            <textarea id="alamat" rows="3" class="input" placeholder="Alamat lengkap sesuai domisili" maxlength="500"></textarea>
+            <p class="err" id="err-alamat"></p>
+          </div>
+          <div>
+            <label class="label" for="telepon">Nomor Telepon <span class="text-red-500">*</span></label>
+            <input type="tel" id="telepon" class="input" inputmode="numeric" placeholder="Contoh: 081234567890" autocomplete="off">
+            <p class="hint">Diawali angka 0, panjang 10-13 digit.</p>
+            <p class="err" id="err-telepon"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Pengalaman -->
+      <section class="card">
+        <div class="mb-1 flex items-center gap-3"><span class="step">3</span><h2 class="text-lg font-semibold">Pengalaman Kerja Pelamar</h2></div>
+        <p class="mb-5 ml-11 text-sm text-gray-500">Dalam 1 (satu) tahun terakhir.</p>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="cursor-pointer">
+            <input type="radio" name="pengalaman" value="Berpengalaman" class="peer sr-only">
+            <div class="rounded-xl border-2 border-gray-200 p-4 text-sm transition hover:border-brand-300 peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-focus-visible:ring-4 peer-focus-visible:ring-brand-100">
+              <p class="font-semibold text-gray-900">Berpengalaman</p>
+              <p class="text-gray-500">Pernah bekerja di perusahaan lain</p>
+            </div>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="pengalaman" value="Tidak Berpengalaman" class="peer sr-only">
+            <div class="rounded-xl border-2 border-gray-200 p-4 text-sm transition hover:border-brand-300 peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-focus-visible:ring-4 peer-focus-visible:ring-brand-100">
+              <p class="font-semibold text-gray-900">Tidak Berpengalaman</p>
+              <p class="text-gray-500">Belum pernah bekerja</p>
+            </div>
+          </label>
+        </div>
+        <p class="err" id="err-pengalaman"></p>
+
+        <div id="boxPerusahaan" class="mt-5 hidden space-y-4 rounded-xl bg-gray-50 p-4">
+          <p class="text-sm text-gray-600">Isi minimal <b>1</b> nama perusahaan sebelumnya.</p>
+          <div>
+            <label class="label" for="perusahaan1">Perusahaan 1</label>
+            <input type="text" id="perusahaan1" class="input" maxlength="150" placeholder="Nama perusahaan">
+          </div>
+          <div>
+            <label class="label" for="perusahaan2">Perusahaan 2</label>
+            <input type="text" id="perusahaan2" class="input" maxlength="150" placeholder="Nama perusahaan (opsional)">
+          </div>
+          <div>
+            <label class="label" for="perusahaan3">Perusahaan 3</label>
+            <input type="text" id="perusahaan3" class="input" maxlength="150" placeholder="Nama perusahaan (opsional)">
+          </div>
+          <p class="err" id="err-perusahaan"></p>
+        </div>
+      </section>
+
+      <!-- 4. Perekomendasi -->
+      <section class="card">
+        <div class="mb-1 flex items-center gap-3"><span class="step">4</span><h2 class="text-lg font-semibold">Yang Merekomendasikan</h2></div>
+        <p class="mb-5 ml-11 text-sm text-gray-500">Atasan Departemen.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="label" for="rekNama">Nama <span class="text-red-500">*</span></label>
+            <input type="text" id="rekNama" class="input" maxlength="100" placeholder="Nama lengkap atasan" autocomplete="off">
+            <p class="err" id="err-rekNama"></p>
+          </div>
+          <div>
+            <label class="label" for="rekIdCard">Nomor ID Card <span class="text-red-500">*</span></label>
+            <input type="text" id="rekIdCard" class="input" inputmode="numeric" placeholder="Nomor ID Card karyawan" autocomplete="off">
+            <p class="err" id="err-rekIdCard"></p>
+          </div>
+          <div>
+            <label class="label" for="rekJabatan">Jabatan <span class="text-red-500">*</span></label>
+            <input type="text" id="rekJabatan" class="input" maxlength="100" placeholder="Contoh: Kepala Departemen Produksi" autocomplete="off">
+            <p class="err" id="err-rekJabatan"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Pernyataan -->
+      <section class="card">
+        <div class="mb-5 flex items-center gap-3"><span class="step">5</span><h2 class="text-lg font-semibold">Pernyataan &amp; Persetujuan</h2></div>
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-brand-200 bg-brand-50 p-4">
+          <input type="checkbox" id="persetujuan" class="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+          <span class="text-sm leading-relaxed text-gray-800">Jika suatu hari ada masalah yang merugikan perusahaan atas perbuatan orang yang saya rekomendasikan, saya siap bertanggung jawab.</span>
+        </label>
+        <p class="err" id="err-persetujuan"></p>
+      </section>
+
+      <div id="alertBox" class="hidden rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"></div>
+
+      <button type="submit" id="btnSubmit"
+        class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60">
+        <svg id="spinner" class="hidden h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+        <span id="btnText">Kirim Rekomendasi</span>
+      </button>
+    </form>
+
+    <!-- SUKSES -->
+    <section id="successBox" class="card hidden text-center">
+      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-100">
+        <svg class="h-9 w-9 text-brand-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900">Rekomendasi Berhasil Dikirim</h2>
+      <p class="mt-2 text-sm text-gray-600">Terima kasih. Data rekomendasi Anda telah tercatat.</p>
+      <p class="mt-4 text-sm text-gray-500">Nomor referensi</p>
+      <p id="refId" class="mt-1 inline-block rounded-lg bg-gray-100 px-4 py-2 font-mono text-sm font-semibold text-brand-800"></p>
+      <div class="mt-6">
+        <button id="btnLagi" type="button" class="rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700">Isi Formulir Lagi</button>
+      </div>
+    </section>
+
+    <footer class="mt-8 text-center text-xs text-gray-500">
+      <a href="admin/" class="font-medium text-brand-700 hover:underline">Login Admin</a>
+    </footer>
+  </main>
+
+<script>
+(function () {
+  const $ = function (id) { return document.getElementById(id); };
+  const FIELDS = ['tanggalMelamar','nama','ktp','alamat','telepon','pengalaman','perusahaan','rekNama','rekIdCard','rekJabatan','persetujuan'];
+
+  // Tanggal minimal = hari ini (waktu perangkat)
+  (function () {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    $('tanggalMelamar').min = d.getFullYear() + '-' + m + '-' + day;
+  })();
+
+  // Input angka saja
+  function digitsOnly(id, max, onChange) {
+    $(id).addEventListener('input', function () {
+      this.value = this.value.replace(/\D/g, '').slice(0, max);
+      if (onChange) onChange(this.value);
+    });
+  }
+  digitsOnly('ktp', 16, function (v) { $('ktpCount').textContent = v.length + '/16'; });
+  digitsOnly('telepon', 13);
+  digitsOnly('rekIdCard', 20);
+
+  // Pengalaman dinamis
+  function getPengalaman() {
+    const r = document.querySelector('input[name="pengalaman"]:checked');
+    return r ? r.value : '';
+  }
+  document.querySelectorAll('input[name="pengalaman"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      const ber = getPengalaman() === 'Berpengalaman';
+      $('boxPerusahaan').classList.toggle('hidden', !ber);
+      if (!ber) ['perusahaan1','perusahaan2','perusahaan3'].forEach(function (id) { $(id).value = ''; });
+      hideErr('pengalaman'); hideErr('perusahaan');
+    });
+  });
+
+  // Error helpers
+  function showErr(key, msg) {
+    const el = $('err-' + key);
+    if (!el) return;
+    el.textContent = msg; el.classList.remove('hidden');
+    const inp = $(key); if (inp && inp.classList) inp.classList.add('invalid');
+  }
+  function hideErr(key) {
+    const el = $('err-' + key);
+    if (el) { el.textContent = ''; el.classList.add('hidden'); }
+    const inp = $(key); if (inp && inp.classList) inp.classList.remove('invalid');
+  }
+  function clearErrs() { FIELDS.forEach(hideErr); $('alertBox').classList.add('hidden'); }
+  FIELDS.forEach(function (k) {
+    const el = $(k);
+    if (el) el.addEventListener('input', function () { hideErr(k); });
+  });
+  ['perusahaan1','perusahaan2','perusahaan3'].forEach(function (id) {
+    $(id).addEventListener('input', function () { hideErr('perusahaan'); });
+  });
+  $('persetujuan').addEventListener('change', function () { hideErr('persetujuan'); });
+
+  function collect() {
+    return {
+      tanggalMelamar: $('tanggalMelamar').value,
+      nama: $('nama').value.trim(),
+      ktp: $('ktp').value.trim(),
+      alamat: $('alamat').value.trim(),
+      telepon: $('telepon').value.trim(),
+      pengalaman: getPengalaman(),
+      perusahaan1: $('perusahaan1').value.trim(),
+      perusahaan2: $('perusahaan2').value.trim(),
+      perusahaan3: $('perusahaan3').value.trim(),
+      rekNama: $('rekNama').value.trim(),
+      rekIdCard: $('rekIdCard').value.trim(),
+      rekJabatan: $('rekJabatan').value.trim(),
+      persetujuan: $('persetujuan').checked
+    };
+  }
+
+  function validate(d) {
+    const e = {};
+    if (!d.tanggalMelamar) e.tanggalMelamar = 'Tanggal rencana melamar wajib diisi.';
+    if (d.nama.length < 3) e.nama = 'Nama lengkap wajib diisi (minimal 3 karakter).';
+    if (!/^\d{16}$/.test(d.ktp)) e.ktp = 'Nomor KTP harus tepat 16 digit angka (saat ini ' + d.ktp.length + ' digit).';
+    if (d.alamat.length < 5) e.alamat = 'Alamat wajib diisi.';
+    if (!/^0\d{9,12}$/.test(d.telepon)) e.telepon = 'Nomor telepon harus diawali 0 dan terdiri dari 10-13 digit angka.';
+    if (!d.pengalaman) e.pengalaman = 'Pilih salah satu pengalaman kerja.';
+    else if (d.pengalaman === 'Berpengalaman' && !(d.perusahaan1 || d.perusahaan2 || d.perusahaan3)) {
+      e.perusahaan = 'Isi minimal 1 nama perusahaan sebelumnya.';
+    }
+    if (d.rekNama.length < 3) e.rekNama = 'Nama yang merekomendasikan wajib diisi.';
+    if (!/^\d{1,20}$/.test(d.rekIdCard)) e.rekIdCard = 'Nomor ID Card wajib diisi dengan angka.';
+    if (d.rekJabatan.length < 2) e.rekJabatan = 'Jabatan wajib diisi.';
+    if (!d.persetujuan) e.persetujuan = 'Anda harus mencentang pernyataan ini untuk melanjutkan.';
+    return e;
+  }
+
+  function showErrors(errs) {
+    clearErrs();
+    let first = null;
+    FIELDS.forEach(function (k) {
+      if (errs[k]) { showErr(k, errs[k]); if (!first) first = k; }
+    });
+    if (first) {
+      const target = $(first) || $('err-' + first);
+      const el = first === 'pengalaman' ? $('err-pengalaman') : (first === 'perusahaan' ? $('boxPerusahaan') : target);
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function setLoading(on) {
+    $('btnSubmit').disabled = on;
+    $('spinner').classList.toggle('hidden', !on);
+    $('btnText').textContent = on ? 'Mengirim...' : 'Kirim Rekomendasi';
+  }
+
+  $('formRek').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    if ($('btnSubmit').disabled) return; // cegah kirim ganda
+    const data = collect();
+    const errs = validate(data);
+    if (Object.keys(errs).length) { showErrors(errs); return; }
+    clearErrs();
+    setLoading(true);
+
+    const res = await Api.call('submit', { data: data });
+    setLoading(false);
+
+    if (res && res.success) {
+      $('refId').textContent = res.id;
+      $('formRek').classList.add('hidden');
+      $('successBox').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (res && res.errors) {
+      showErrors(res.errors);
+    } else {
+      $('alertBox').textContent = (res && res.message) || 'Gagal menyimpan data.';
+      $('alertBox').classList.remove('hidden');
+    }
+  });
+
+  $('btnLagi').addEventListener('click', function () {
+    $('formRek').reset();
+    $('ktpCount').textContent = '0/16';
+    $('boxPerusahaan').classList.add('hidden');
+    clearErrs();
+    $('successBox').classList.add('hidden');
+    $('formRek').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+</script>
 </body>
-
 </html>
