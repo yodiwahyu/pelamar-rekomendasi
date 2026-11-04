@@ -211,6 +211,63 @@
   digitsOnly('telepon', 13);
   digitsOnly('rekIdCard', 20);
 
+  // Pengecekan duplikasi KTP otomatis setelah 16 digit selesai diketik.
+  // Server tetap memeriksa ulang saat submit sebagai pengaman utama.
+  let ktpTimer = null;
+  let ktpCheckSeq = 0;
+  let ktpCheckState = 'idle'; // idle, checking, available, duplicate, error
+
+  $('ktp').addEventListener('input', function () {
+    const ktp = this.value.trim();
+    clearTimeout(ktpTimer);
+    ktpCheckSeq++;
+    ktpCheckState = 'idle';
+    hideErr('ktp');
+    $('alertBox').classList.add('hidden');
+
+    if (ktp.length !== 16) {
+      $('btnSubmit').disabled = false;
+      return;
+    }
+
+    const seq = ktpCheckSeq;
+    ktpCheckState = 'checking';
+    $('btnSubmit').disabled = true;
+
+    ktpTimer = setTimeout(async function () {
+      if (seq !== ktpCheckSeq || $('ktp').value.trim() !== ktp) return;
+
+      let res;
+      try {
+        res = await Api.call('checkKtp', { ktp: ktp });
+      } catch (err) {
+        res = null;
+      }
+
+      // Abaikan respons lama jika pengguna sudah mengubah nomor KTP.
+      if (seq !== ktpCheckSeq || $('ktp').value.trim() !== ktp) return;
+
+      if (!res || !res.success) {
+        ktpCheckState = 'error';
+        $('btnSubmit').disabled = false;
+        $('alertBox').textContent = 'Pemeriksaan KTP belum berhasil. Sistem akan memeriksa ulang saat data dikirim.';
+        $('alertBox').classList.remove('hidden');
+        return;
+      }
+
+      $('alertBox').classList.add('hidden');
+      if (res.exists) {
+        ktpCheckState = 'duplicate';
+        showErr('ktp', 'Nomor KTP sudah terdaftar! Data tidak dapat disimpan.');
+        $('btnSubmit').disabled = true;
+      } else {
+        ktpCheckState = 'available';
+        hideErr('ktp');
+        $('btnSubmit').disabled = false;
+      }
+    }, 500);
+  });
+
   // Pengalaman dinamis
   function getPengalaman() {
     const r = document.querySelector('input[name="pengalaman"]:checked');
@@ -240,7 +297,10 @@
   function clearErrs() { FIELDS.forEach(hideErr); $('alertBox').classList.add('hidden'); }
   FIELDS.forEach(function (k) {
     const el = $(k);
-    if (el) el.addEventListener('input', function () { hideErr(k); });
+    if (el) el.addEventListener('input', function () {
+      if (k === 'ktp' && ktpCheckState === 'duplicate' && this.value.trim().length === 16) return;
+      hideErr(k);
+    });
   });
   ['perusahaan1','perusahaan2','perusahaan3'].forEach(function (id) {
     $(id).addEventListener('input', function () { hideErr('perusahaan'); });
@@ -324,7 +384,7 @@
   }
 
   function setLoading(on) {
-    $('btnSubmit').disabled = on;
+    $('btnSubmit').disabled = on || ktpCheckState === 'checking' || ktpCheckState === 'duplicate';
     $('spinner').classList.toggle('hidden', !on);
     $('btnText').textContent = on ? 'Mengirim...' : 'Kirim Rekomendasi';
   }
@@ -348,6 +408,10 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (res && res.errors) {
       showErrors(res.errors);
+      if (res.errors.ktp && /sudah terdaftar/i.test(res.errors.ktp)) {
+        ktpCheckState = 'duplicate';
+        $('btnSubmit').disabled = true;
+      }
     } else {
       $('alertBox').textContent = (res && res.message) || 'Gagal menyimpan data.';
       $('alertBox').classList.remove('hidden');
@@ -355,6 +419,10 @@
   });
 
   $('btnLagi').addEventListener('click', function () {
+    clearTimeout(ktpTimer);
+    ktpCheckSeq++;
+    ktpCheckState = 'idle';
+    $('btnSubmit').disabled = false;
     $('formRek').reset();
     $('ktpCount').textContent = '0/16';
     $('boxPerusahaan').classList.add('hidden');
